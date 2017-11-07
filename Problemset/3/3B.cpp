@@ -7,7 +7,7 @@ using namespace std;
 struct boatInfo {
     long long capacity;
     long long volume;
-    double capacityRatio;
+    long double capacityRatio;
     long long vNumber;
 };
 
@@ -26,7 +26,7 @@ bool cmpFunction (boatInfo* b1, boatInfo* b2) {
 void newBoat(boatInfo* boat, long long capacity, int type, long long vNumber) {
     boat->capacity = capacity;
     boat->volume = (type == 1 ? 1 : 2);
-    boat->capacityRatio = ((double)capacity) / boat->volume;
+    boat->capacityRatio = ((long double)capacity) / boat->volume;
     boat->vNumber = vNumber;
 }
 
@@ -44,55 +44,50 @@ int main() {
     }
     
     sort(boatVector.begin(), boatVector.end(), cmpFunction);
-    for (auto i : boatVector) {
-        cout << i->volume << ", " << i->capacity << ", " << i->capacityRatio << ", " << i->vNumber <<endl;
-    }
-    cout << endl;
-    long long usedVolume = 0, totalCap = 0;
+
+    long long totalCap = 0;
     long long remainingVolume = maxVolume;
+    boatInfo* last1 = NULL;
+    boatInfo* firstNotUsed2 = NULL;
     vector<long long> boatSet;
+    auto it = boatVector.begin();
 
-
-    // if remaining volume is 2 our type 1 boat can be better with lower ratio
-
-    for (auto it = boatVector.begin(); it != boatVector.end(); it++) {
-        if (remainingVolume == 2 && *it->volume == 1 && next(it) != boatVector.end()) { // Special case
-            long curBoat = *it->vNumber;
-            long long cap1 = *it->capacity, cap2;
-            long long nBoat1 = -1, nBoat2 = -1;
-            while (it != boatVector.end()) {
-                if (nBoat1 != -1 && nBoat2 != -2) { // both found
-                    break;
-                }
-                if (*it->volume == 1 && nBoat1 != -1 ) { // boat1 found
-                    1Found = true;
-                    cap1 += *it->capacity; 
-                }
-                else if (*it->volume == 2 && !2Found) { // boat2 found
-                    2Found = true;
-                    cap2 = *it->capacity;
-                }
-                i++;
-            }
-            if (cap1 > cap2) {
-                totalCap += cap1;
-                boatSet.push_back(curBoat);
-                boatSet.push_back(nBoat1);
-            }
-            else {
-                totalCap +) cap2;
-                boatSet.push_back(nBoat2);
-            }
+    for (; it != boatVector.end(); it++) {
+        boatInfo* i = (*it);
+        if (i->volume == 1 && remainingVolume != 1) {
+            last1 = i;
+        }
+        if (firstNotUsed2 == NULL && remainingVolume == 1 && i->volume == 2) { // first vol 2 boat that wont fit, may me better than both 1's
+            firstNotUsed2 = i;
+        }
+        if (remainingVolume - i->volume >= 0) { // regular case -> keep adding best ratios
+            totalCap += i->capacity;
+            remainingVolume -= i->volume;
+            boatSet.push_back(i->vNumber);
+        }
+        if (remainingVolume == 0){
             break;
         }
-        else if (usedVolume + *it->volume <= maxVolume) { // 
-            totalCap += *it->capacity;
-            usedVolume += *it->volume;
-            boatSet.push_back(*it->vNumber);
+    }
+
+    if (firstNotUsed2 != NULL) { // There a 2 not used
+        if ((remainingVolume == 1 && last1 != NULL)) { // Finished list with no match for last1
+            if (last1->capacity < firstNotUsed2->capacity) {
+                totalCap = totalCap - last1->capacity + firstNotUsed2->capacity;
+                auto it = find(boatSet.begin(), boatSet.end(), last1->vNumber);
+                boatSet.erase(it);
+                boatSet.push_back(firstNotUsed2->vNumber);    
+            }
         }
-        else if (remainingVolume == 0){
-            break;
+        else if((last1 != (*it)) && (((*it)->capacity + last1->capacity) < firstNotUsed2->capacity)) { // Finished list with match for last1
+            totalCap = totalCap - (*it)->capacity - last1->capacity + firstNotUsed2->capacity;
+            auto it1 = find(boatSet.begin(), boatSet.end(), (*it)->vNumber);
+            boatSet.erase(it1);
+            auto it2 = find(boatSet.begin(), boatSet.end(), last1->vNumber);
+            boatSet.erase(it2);
+            boatSet.push_back(firstNotUsed2->vNumber);
         }
+
     }
 
     cout << totalCap << endl;
